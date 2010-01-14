@@ -27,8 +27,8 @@ from Core.loadable import loadable
 
 @loadable.module()
 class pref(loadable):
-    """Set your planet, password for the webby, email and phone number; order doesn't matter"""
-    usage = " [planet=x.y.z] [password=pass] [email=my.email@address.com] [phone=999] [pubphone=T|F]"
+    """Set your planet, password for the webby, email, phone number and google voice; order doesn't matter"""
+    usage = " [planet=x.y.z] [password=pass] [email=my.email@address.com] [phone=999] [pubphone=T|F] [googlevoice=T|F]"
     paramre = re.compile(r"\s(.+)")
     
     @loadable.require_user
@@ -75,5 +75,12 @@ class pref(loadable):
                 elif val.lower() in self.false:
                     user.pubphone = False
                     reply += " pubphone=%s"%(False)
+            if opt == "googlevoice":
+                if val.lower() in self.true:
+                    user.googlevoice = True
+                    reply += " googlevoice=%s"%(True)
+                elif val.lower() in self.false:
+                    user.googlevoice = False
+                    reply += " googlevoice=%s"%(False)
         session.commit()
         message.reply("Updated your preferences:"+reply)

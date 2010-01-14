@@ -20,8 +20,13 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  
 import re
+import csv
+import sys
 from urllib import urlencode
 from urllib2 import urlopen
+from gvoice import *
+import getpass
+import os
 from Core.config import Config
 from Core.db import session
 from Core.maps import User, SMS
@@ -43,9 +48,6 @@ class sms(loadable):
         if not receiver:
             message.reply("Who exactly is %s?" % (rec,))
             return
-        if receiver.name.lower() == 'valle':
-            message.reply("I refuse to talk to that Swedish clown. Use !phone show Valle and send it using your own phone.")
-            return 
 
         if not receiver.pubphone and user not in receiver.phonefriends:
             message.reply("%s's phone number is private or they have not chosen to share their number with you. Supersecret message not sent." % (receiver.name,))
@@ -59,23 +61,40 @@ class sms(loadable):
         if len(text) >= 160:
             message.reply("Max length for a text is 160 characters. Your text was %i characters long. Super secret message not sent." % (len(text),))
             return
+	if not receiver.googlevoice:
+	  get = urlencode({"user": Config.get("clickatell", "user"),
+			 "password": Config.get("clickatell", "pass"),
+			 "api_id": Config.get("clickatell", "api"),
+			 "to": phone,
+			 "text": text,
+			})
+	
+	  status, msg = urlopen("https://api.clickatell.com/http/sendmsg", get).read().split(":")
+	
+	  if status in ("OK","ID",):
+	    message.reply("Successfully processed To: %s Message: %s" % (receiver.name,text))
+	    self.log_message(user,receiver,phone, public_text)
+	  elif status in ("ERR",):
+	    message.reply("Error sending message: %s" % (msg.strip(),))
+	  else:
+	    message.reply("That wasn't supposed to happen. I don't really know what wrong. Maybe your mother dropped you.")
+	  return
 
-        get = urlencode({"user": Config.get("clickatell", "user"),
-                         "password": Config.get("clickatell", "pass"),
-                         "api_id": Config.get("clickatell", "api"),
-                         "to": phone,
-                         "text": text,
-                        })
-        
-        status, msg = urlopen("https://api.clickatell.com/http/sendmsg", get).read().split(":")
-        
-        if status in ("OK","ID",):
-            message.reply("Successfully processed To: %s Message: %s" % (receiver.name,text))
-            self.log_message(user,receiver,phone, public_text)
-        elif status in ("ERR",):
-            message.reply("Error sending message: %s" % (msg.strip(),))
-        else:
-            message.reply("That wasn't supposed to happen. I don't really know what wrong. Maybe your mother dropped you.")
+	email = Config.get("googlevoice", "email")
+        password = Config.get("googlevoice", "pass")
+        gvoice = GoogleVoiceLogin(email, password)
+        if not gvoice.logged_in:
+	  message.reply("Could not log in with provided credentials")
+	  return
+	else:
+	  text_sender = TextSender(gvoice.opener, gvoice.key)
+          text_sender.text = text
+          number = phone
+          text_sender.send_text(phone)
+          if text_sender.response:
+		message.reply("Sending message to {0} at {1}".format(receiver.name, phone),)
+          else:
+	      message.reply("Failed!!")
     
     def prepare_phone_number(self,text):
         if not text:

@@ -350,6 +350,7 @@ class User(Base):
     fleetcount = Column(Integer, default=0)
     fleetcomment = Column(String(512))
     fleetupdated = Column(Integer, default=0)
+    googlevoice = Column(Boolean, default=False)
     
     @validates('passwd')
     def valid_passwd(self, key, passwd):
