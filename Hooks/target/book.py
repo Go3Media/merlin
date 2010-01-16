@@ -20,18 +20,19 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  
 import re
+import datetime
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import asc
 from Core.config import Config
 from Core.db import session
-from Core.maps import Updates, Planet, User, Target
+from Core.maps import Updates, Planet, User, Target, Attack, AttackData
 from Core.loadable import loadable
 
 @loadable.module("half")
 class book(loadable):
     """Book a target for attack. You should always book your targets, so someone doesn't inadvertedly piggy your attack."""
-    usage = " x:y:z (eta|landing tick)"
-    paramre = re.compile(loadable.planet_coordre.pattern+r"\s(\d+)(?:\s(yes))?")
+    usage = " x:y:z (eta|landing tick) <later>"
+    paramre = re.compile(loadable.planet_coordre.pattern+r"\s(\d+)(?:\s(yes|later))?(?:\s(yes|later))?")
     
     @loadable.require_user
     def execute(self, message, user, params):
@@ -56,7 +57,17 @@ class book(loadable):
         if planet.intel and planet.alliance and planet.alliance.name == Config.get("Alliance","name"):
             message.reply("%s:%s:%s is %s in %s. Quick, launch before they notice the highlight." % (planet.x,planet.y,planet.z, planet.intel.nick or 'someone', Config.get("Alliance","name"),))
             return
-        
+                
+        T = session.query(Attack)
+        T = T.join(AttackData)
+        T = T.filter(AttackData.planet_id == planet.id)
+        T = T.filter(Attack.start_time < datetime.datetime.now())
+        T = T.filter(Attack.book_time > datetime.datetime.now())
+        tresult = T.all()
+        if len(tresult) >= 1:
+	    message.reply("Target %s:%s:%s is part of an upcoming attack" % (planet.x,planet.y,planet.z,))
+	    return
+
         Q = session.query(User.name, Target.tick)
         Q = Q.join(Target.user)
         Q = Q.filter(Target.planet == planet)
@@ -67,10 +78,32 @@ class book(loadable):
         if len(result) >= 1:
             booker, land = result[0]
             if land == when:
-                message.reply("Target %s:%s:%s is already booked for landing tick %s by user %s" % (planet.x,planet.y,planet.z, land, booker,))
-                return
-            
-            if params.group(5) is None:
+	        if str(params.group(5)) == "later" or str(params.group(6)) == "later":
+		    later = when+1
+                    Q2 = session.query(User.name, Target.tick)
+                    Q2 = Q2.join(Target.user)
+                    Q2 = Q2.filter(Target.planet == planet)
+                    Q2 = Q2.filter(Target.tick >= later)
+                    Q2 = Q2.order_by(asc(Target.tick))
+                    result2 = Q2.all()
+		    if len(result2) >= 1:
+                       laterbooker, laterland = result2[0]
+                       if laterland == later:
+                           message.reply("YOU CANNOT HIT %s:%s:%s. NOT EVEN SLOPPY SECOND'S. THIS TARGET IS MORE TAKEN THAN YOUR MUM, AMIRITE?" % (planet.x,planet.y,planet.z,))
+                           return
+                    try:
+                        planet.bookings.append(Target(user=user, tick=later))
+                        session.commit()
+                        message.reply("YOU HAVE BEEN BEATEN TO THIS TARGET. YOU ARE NOW GETTING SLOPPY SECOND'S ON %s:%s:%s TAKING PLACE ON TICK %s" % (planet.x,planet.y,planet.z, later,))
+                        return
+                    except IntegrityError:
+                        session.rollback()
+                        raise Exception("Integrity error? Unable to booking for pid %s and tick %s"%(planet.id, later,))
+                        return
+		else:
+                    message.reply("Target %s:%s:%s is already booked for landing tick %s by user %s" % (planet.x,planet.y,planet.z, land, booker,))
+                    return
+            if params.group(5) is None or (str(params.group(5)) == "later" and params.group(6) is None):
                 reply="There are already bookings for that target after landing pt %s (eta %s). To see status on this target, do !status %s:%s:%s." % (when,eta, planet.x,planet.y,planet.z,)
                 reply+=" To force booking at your desired eta/landing tick, use !book %s:%s:%s %s yes (Bookers: " %(planet.x,planet.y,planet.z, when,)
                 prev=[]
