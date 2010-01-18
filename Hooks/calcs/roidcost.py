@@ -41,12 +41,11 @@ class roidcost(loadable):
 
         mining=mining * ((float(bonus)+100)/100)
 
-        repay = (cost*100)/(roids*mining)
-        demo = int(repay/(1+PA.getfloat("demo","prodcost")))
-        total = int(repay/(1+PA.getfloat("total","prodcost")))
-        repay = int(repay)
+        repay=int((cost*100)/(roids*mining))
 
-        reply = "Capping %s roids at %s value with %s%% bonus will repay in %s ticks (%s days) " % (roids,self.num2short(cost),bonus,repay,repay/24)
-        reply+= "Demo: %s ticks (%s days) Total: %s ticks (%s days)" % (demo,demo/24,total,total/24)
+        reply="Capping %s roids at %s value with %s%% bonus will repay in %s ticks (%s days)" % (roids,self.num2short(cost),bonus,repay,repay/24)
+
+        repay = int((cost*100)/(roids*mining*(1/(1+PA.getfloat("feud","prodcost")))))
+        reply+=" Feudalism: %s ticks (%s days)" % (repay,repay/24)
 
         message.reply(reply)

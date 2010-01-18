@@ -521,6 +521,7 @@ class Attack(Base):
     waves = Column(Integer)
     active = Column(Boolean, default=True)
     note = Column(String(512))
+Attack.bookings = dynamic_loader(Attack, backref="planet")
 
 # ########################################################################### #
 # ###########################    Attack Data    ############################# #
@@ -908,7 +909,7 @@ class UserFleet(Base):
     __tablename__ = 'user_fleet'
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey(User.id, ondelete='cascade'))
-    ship = Column(String(30))
+    ship_id = Column(Integer, ForeignKey(Ship.id, ondelete='cascade'))
     ship_count = Column(Integer)
 User.fleets = dynamic_loader(UserFleet, backref="user")
 UserFleet.ships = relation(Ship, primaryjoin=Ship.name==UserFleet.ship, foreign_keys=[UserFleet.ship])
@@ -917,7 +918,7 @@ class FleetLog(Base):
     id = Column(Integer, primary_key=True)
     taker_id = Column(Integer, ForeignKey(User.id, ondelete='cascade'))
     user_id = Column(Integer, ForeignKey(User.id, ondelete='cascade'))
-    ship = Column(String(30))
+    ship_id = Column(Integer, ForeignKey(Ship.id, ondelete='cascade'))
     ship_count = Column(Integer)
     tick = Column(Integer)
 FleetLog.taker = relation(User, primaryjoin=FleetLog.taker_id==User.id)
