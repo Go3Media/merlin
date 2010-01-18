@@ -10,9 +10,9 @@ from Core.loadable import loadable
 
 @loadable.module("member")
 class attack(loadable):
-    """Book a target for attack. You should always book your targets, so someone doesn't inadvertedly piggy your attack."""
-    usage = " start_time booking_time coords <waves>"
-    paramre = re.compile(r"\s+(\d+)\s+(\d+)\s+(?:"+loadable.planet_coordre.pattern+"){1,}(?:\s+(\d+))?")
-    @loadable.require_user
-    def execute(self, message, user, params):
-        for m in loadable.planet_coordre.finditer(message.get_msg().split(None, 3)[3]):
+#    """Book a target for attack. You should always book your targets, so someone doesn't inadvertedly piggy your attack."""
+#    usage = " start_time booking_time coords <waves>"
+#    paramre = re.compile(r"\s+(\d+)\s+(\d+)\s+(?:"+loadable.planet_coordre.pattern+"){1,}(?:\s+(\d+))?")
+#    @loadable.require_user
+#    def execute(self, message, user, params):
+#        #for m in loadable.planet_coordre.finditer(message.get_msg().split(None, 3)[3]):

@@ -21,7 +21,7 @@
  
 # List of package modules
 __all__ = [
-           "attack",
+#           "attack",
            "bitches",
            "status",
            "book",

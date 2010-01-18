@@ -20,13 +20,14 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  
 import re
+from print_r import print_r
 from Core.db import session
 from Core.maps import Updates, Ship, UserFleet
 from Core.loadable import loadable
 
 @loadable.module("member")
 class mydef(loadable):
-     """Add your fleets for defense listing. For example: 2x 20k Barghest 30k Harpy Call me any time for hot shipsex."""
+    """Add your fleets for defense listing. For example: 2x 20k Barghest 30k Harpy Call me any time for hot shipsex."""
     usage = " [fleets] x <[ship count] [ship name]> [comment]"
     paramre = re.compile(r"\s+(\d)\s*x\s*(.*)",re.I)
     countre = re.compile(r"^(\d+(?:\.\d+)?[mk]?)$",re.I)
@@ -51,7 +52,7 @@ class mydef(loadable):
         ships = user.fleets.all()
         
         reply = "Updated your def info to: fleetcount %s, updated: pt%s ships: " %(user.fleetcount,user.fleetupdated)
-        reply+= ", ".join(map(lambda x:"%s %s" %(self.num2short(x.ship_count),x.ship.name),ships))
+        reply+= ", ".join(map(lambda x:"%s %s" %(self.num2short(x.ship_count),x.ship_name),ships))
         reply+= " and comment: %s" %(user.fleetcomment)
         message.reply(reply)
     
@@ -63,9 +64,9 @@ class mydef(loadable):
     
     def update_fleets(self,user,ships):
         user.fleets.delete()
-        
         for ship, count in ships.items():
-            user.fleets.append(UserFleet(ship=ship, ship_count=count))
+	    s = Ship.load(ship)
+	    user.fleets.append(UserFleet(ship_id=s.id, ship_count=count))
     
     def update_comment_and_fleetcount(self,user,fleetcount,comment):
         user.fleetcount = fleetcount
@@ -95,7 +96,7 @@ class mydef(loadable):
                 break
             
             ships[ship]=count
-                        
+            
             parts.pop(0)
             parts.pop(0)
         comment=" ".join(parts)

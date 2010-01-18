@@ -61,40 +61,40 @@ class sms(loadable):
         if len(text) >= 160:
             message.reply("Max length for a text is 160 characters. Your text was %i characters long. Super secret message not sent." % (len(text),))
             return
-	if not receiver.googlevoice:
-	  get = urlencode({"user": Config.get("clickatell", "user"),
-			 "password": Config.get("clickatell", "pass"),
-			 "api_id": Config.get("clickatell", "api"),
-			 "to": phone,
-			 "text": text,
-			})
+        if not receiver.googlevoice:
+            get = urlencode({"user": Config.get("clickatell", "user"),
+                        "password": Config.get("clickatell", "pass"),
+                        "api_id": Config.get("clickatell", "api"),
+                        "to": phone,
+                        "text": text,
+            })
 	
-	  status, msg = urlopen("https://api.clickatell.com/http/sendmsg", get).read().split(":")
+            status, msg = urlopen("https://api.clickatell.com/http/sendmsg", get).read().split(":")
 	
-	  if status in ("OK","ID",):
-	    message.reply("Successfully processed To: %s Message: %s" % (receiver.name,text))
-	    self.log_message(user,receiver,phone, public_text)
-	  elif status in ("ERR",):
-	    message.reply("Error sending message: %s" % (msg.strip(),))
-	  else:
-	    message.reply("That wasn't supposed to happen. I don't really know what wrong. Maybe your mother dropped you.")
-	  return
+            if status in ("OK","ID",):
+	        message.reply("Successfully processed To: %s Message: %s" % (receiver.name,text))
+	        self.log_message(user,receiver,phone, public_text)
+            elif status in ("ERR",):
+	        message.reply("Error sending message: %s" % (msg.strip(),))
+            else:
+	        message.reply("That wasn't supposed to happen. I don't really know what wrong. Maybe your mother dropped you.")
+            return
 
 	email = Config.get("googlevoice", "email")
         password = Config.get("googlevoice", "pass")
         gvoice = GoogleVoiceLogin(email, password)
         if not gvoice.logged_in:
-	  message.reply("Could not log in with provided credentials")
-	  return
-	else:
-	  text_sender = TextSender(gvoice.opener, gvoice.key)
-          text_sender.text = text
-          number = phone
-          text_sender.send_text(phone)
-          if text_sender.response:
-		message.reply("Sending message to {0} at {1}".format(receiver.name, phone),)
-          else:
-	      message.reply("Failed!!")
+            message.reply("Could not log in with provided credentials")
+            return
+        else:
+            text_sender = TextSender(gvoice.opener, gvoice.key)
+            text_sender.text = text
+            number = phone
+            text_sender.send_text(phone)
+            if text_sender.response:
+                message.reply("Sending message to {0} at {1}".format(receiver.name, phone),)
+            else:
+                message.reply("Failed!!")
     
     def prepare_phone_number(self,text):
         if not text:

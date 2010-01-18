@@ -521,7 +521,7 @@ class Attack(Base):
     waves = Column(Integer)
     active = Column(Boolean, default=True)
     note = Column(String(512))
-Attack.bookings = dynamic_loader(Attack, backref="planet")
+#Attack.bookings = dynamic_loader(Attack, backref="planet")
 
 # ########################################################################### #
 # ###########################    Attack Data    ############################# #
@@ -912,7 +912,7 @@ class UserFleet(Base):
     ship_id = Column(Integer, ForeignKey(Ship.id, ondelete='cascade'))
     ship_count = Column(Integer)
 User.fleets = dynamic_loader(UserFleet, backref="user")
-UserFleet.ships = relation(Ship, primaryjoin=Ship.name==UserFleet.ship, foreign_keys=[UserFleet.ship])
+UserFleet.ships = relation(Ship, primaryjoin=Ship.id==UserFleet.ship_id)
 class FleetLog(Base):
     __tablename__ = 'fleet_log'
     id = Column(Integer, primary_key=True)
